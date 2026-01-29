@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Game Cerdas Sholat</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366F1;
+            --accent: #F43F5E;
+            --success: #10B981;
+            --bg-body: #EEF2FF;
+            --card-shadow: 0 8px 0 rgba(0,0,0,0.15); /* Efek 3D Tebal */
+            --card-shadow-active: 0 4px 0 rgba(0,0,0,0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Agar tidak bisa diblok teksnya saat main */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif; /* Font bulat lucu */
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(#C7D2FE 2px, transparent 2px), 
+                radial-gradient(#C7D2FE 2px, transparent 2px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- GAME CONTAINER (Mobile Aspect Ratio) --- */
+        .game-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            max-height: 850px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+            border-radius: 0; 
+        }
+
+        @media (min-width: 450px) {
+            .game-container {
+                height: 90vh;
+                border-radius: 30px;
+                border: 4px solid #fff;
+            }
+        }
+
+        /* --- HUD (Heads Up Display) --- */
+        .hud {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            border-bottom: 3px solid #E0E7FF;
+            border-radius: 0 0 25px 25px;
+            z-index: 10;
+        }
+
+        .score-box {
+            background: #FFEDD5;
+            color: #C2410C;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 0 #FDBA74;
+        }
+
+        .lives-box {
+            display: flex;
+            gap: 5px;
+        }
+
+        .heart {
+            font-size: 1.5rem;
+            animation: beat 1.5s infinite;
+        }
+
+        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        /* --- GAME BOARD --- */
+        .board {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Kiri Kanan */
+            gap: 15px;
+            align-content: center; /* Tengah vertikal */
+            position: relative;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- CARD STYLE (Tombol Game) --- */
+        .game-card {
+            background: #fff;
+            height: 90px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #E2E8F0;
+            box-shadow: var(--card-shadow);
+            transition: all 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:active {
+            transform: translateY(4px);
+            box-shadow: var(--card-shadow-active);
+        }
+
+        /* State: Selected (Dipilih) */
+        .game-card.selected {
+            border-color: var(--primary);
+            background: #EEF2FF;
+            transform: translateY(2px);
+            box-shadow: var(--card-shadow-active);
+        }
+
+        /* State: Correct (Benar) */
+        .game-card.correct {
+            background: #D1FAE5;
+            border-color: var(--success);
+            color: #065F46;
+            animation: popSuccess 0.5s;
+            pointer-events: none; /* Gak bisa diklik lagi */
+            opacity: 0; /* Menghilang */
+            transition: opacity 0.5s ease 0.5s; /* Delay hilang */
+        }
+
+        /* State: Wrong (Salah) */
+        .game-card.wrong {
+            background: #FEE2E2;
+            border-color: var(--accent);
+            animation: shake 0.4s;
+        }
+
+        /* Isi Kartu */
+        .card-icon { font-size: 2rem; margin-bottom: 5px; }
+        .card-text { font-size: 1rem; font-weight: 700; text-align: center; line-height: 1.1; }
+
+        /* --- THEMES COLORS --- */
+        .theme-subuh { color: #059669; }
+        .theme-zuhur { color: #D97706; }
+        .theme-ashar { color: #EA580C; }
+        .theme-maghrib { color: #2563EB; }
+        .theme-isya { color: #7C3AED; }
+
+        /* --- MODAL (WIN/LOSE) --- */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-card {
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            text-align: center;
+            width: 85%;
+            box-shadow: 0 10px 0 rgba(0,0,0,0.2);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-emoji { font-size: 4rem; display: block; margin-bottom: 10px; }
+        .modal-title { font-size: 1.8rem; color: var(--text-dark); margin-bottom: 10px; }
+        .modal-score { font-size: 1.2rem; color: var(--text-gray); margin-bottom: 25px; }
+
+        .btn-restart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: 'Fredoka', sans-serif;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #4338CA;
+            transition: transform 0.1s;
+        }
+        .btn-restart:active { transform: translateY(4px); box-shadow: 0 2px 0 #4338CA; }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-5deg); }
+            75% { transform: translateX(8px) rotate(5deg); }
+        }
+        @keyframes popSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); background: #6EE7B7; }
+            100% { transform: scale(1); }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="hud">
+            <div class="score-box">
+                ⭐ <span id="scoreVal">0</span>
+            </div>
+            <div class="lives-box" id="livesContainer">
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; padding: 10px; color: #64748B; font-weight: 600;">
+            Pasangkan Kartu yang Cocok! 👇
+        </div>
+
+        <div class="board">
+            <div class="column" id="leftCol">
+                </div>
+            <div class="column" id="rightCol">
+                </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal-card">
+            <span class="modal-emoji" id="modalEmoji">🎉</span>
+            <h2 class="modal-title" id="modalTitle">Hebat Sekali!</h2>
+            <p class="modal-score" id="modalDesc">Kamu berhasil mencocokkan semua niat.</p>
+            <button class="btn-restart" onclick="initGame()">Main Lagi 🚀</button>
+        </div>
+    </div>
+
+    <canvas id="confetti" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:99; display:none;"></canvas>
+
+    <script>
+        // --- DATA SHOLAT ---
+        const levels = [
+            { id: 'fajr', name: 'Subuh', icon: '🌅', rakaat: '2 Rakaat', color: 'theme-subuh' },
+            { id: 'dhuhr', name: 'Zuhur', icon: '☀️', rakaat: '4 Rakaat', color: 'theme-zuhur' },
+            { id: 'asr', name: 'Ashar', icon: '⛅', rakaat: '4 Rakaat', color: 'theme-ashar' },
+            { id: 'maghrib', name: 'Maghrib', icon: '🌇', rakaat: '3 Rakaat', color: 'theme-maghrib' },
+            { id: 'isha', name: 'Isya', icon: '🌙', rakaat: '4 Rakaat', color: 'theme-isya' }
+        ];
+
+        let score = 0;
+        let lives = 3;
+        let selectedLeft = null;
+        let selectedRight = null;
+        let matchedCount = 0;
+        
+        // Pilih 4 sholat secara acak untuk dimainkan setiap ronde agar tidak penuh sesak
+        let currentLevelData = [];
+
+        function initGame() {
+            score = 0;
+            lives = 3;
+            matchedCount = 0;
+            selectedLeft = null;
+            selectedRight = null;
+            
+            updateHUD();
+            document.getElementById('gameModal').style.display = 'none';
+            stopConfetti();
+
+            // Acak dan ambil 4 data saja
+            const shuffled = [...levels].sort(() => 0.5 - Math.random());
+            currentLevelData = shuffled.slice(0, 4);
+
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const leftCol = document.getElementById('leftCol');
+            const rightCol = document.getElementById('rightCol');
+            
+            leftCol.innerHTML = '';
+            rightCol.innerHTML = '';
+
+            // Siapkan data Kiri (Nama) dan Kanan (Rakaat)
+            let leftItems = [];
+            let rightItems = [];
+
+            currentLevelData.forEach(item => {
+                // Item Kiri
+                const divL = document.createElement('div');
+                divL.className = `game-card ${item.color}`;
+                divL.dataset.id = item.id;
+                divL.dataset.type = 'left';
+                divL.innerHTML = `<div class="card-icon">${item.icon}</div><div class="card-text">${item.name}</div>`;
+                divL.onclick = () => handleCardClick(divL);
+                leftItems.push(divL);
+
+                // Item Kanan
+                const divR = document.createElement('div');
+                divR.className = `game-card`; // Rakaat warnanya netral dulu
+                divR.dataset.id = item.id; // ID harus sama untuk matching
+                divR.dataset.type = 'right';
+                // Kita buat sedikit variasi teks agar anak membaca
+                divR.innerHTML = `<div class="card-text" style="font-size:1.2rem; color:#475569;">${item.rakaat}</div>`;
+                divR.onclick = () => handleCardClick(divR);
+                rightItems.push(divR);
+            });
+
+            // Acak posisi Kanan
+            rightItems.sort(() => 0.5 - Math.random());
+
+            // Masukkan ke DOM
+            leftItems.forEach(el => leftCol.appendChild(el));
+            rightItems.forEach(el => rightCol.appendChild(el));
+        }
+
+        function handleCardClick(card) {
+            if (card.classList.contains('correct')) return; // Abaikan jika sudah benar
+
+            const type = card.dataset.type;
+
+            // Logika Seleksi
+            if (type === 'left') {
+                if (selectedLeft) selectedLeft.classList.remove('selected');
+                selectedLeft = card;
+                card.classList.add('selected');
+            } else {
+                if (selectedRight) selectedRight.classList.remove('selected');
+                selectedRight = card;
+                card.classList.add('selected');
+            }
+
+            // Cek Kecocokan
+            if (selectedLeft && selectedRight) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const idLeft = selectedLeft.dataset.id;
+            const idRight = selectedRight.dataset.id;
+
+            if (idLeft === idRight) {
+                // BENAR
+                handleCorrect();
+            } else {
+                // SALAH
+                handleWrong();
+            }
+        }
+
+        function handleCorrect() {
+            // Animasi Benar
+            selectedLeft.classList.add('correct');
+            selectedRight.classList.add('correct');
+            
+            // Beri warna rakaat sesuai pasangannya agar cantik
+            const colorClass = selectedLeft.classList[1]; // Ambil class theme-xxx
+            selectedRight.classList.add(colorClass);
+            selectedRight.style.color = '#fff';
+            selectedRight.style.background = getComputedStyle(document.documentElement).getPropertyValue('--success');
+
+            score += 10;
+            matchedCount++;
+            
+            // Reset Seleksi
+            selectedLeft = null;
+            selectedRight = null;
+
+            updateHUD();
+
+            // Cek Menang
+            if (matchedCount === currentLevelData.length) {
+                setTimeout(gameWin, 800);
+            }
+        }
+
+        function handleWrong() {
+            // Animasi Salah
+            selectedLeft.classList.add('wrong');
+            selectedRight.classList.add('wrong');
+            
+            // Kurangi Nyawa
+            lives--;
+            updateHUD();
+
+            setTimeout(() => {
+                if (selectedLeft) selectedLeft.classList.remove('wrong', 'selected');
+                if (selectedRight) selectedRight.classList.remove('wrong', 'selected');
+                selectedLeft = null;
+                selectedRight = null;
+
+                // Cek Kalah
+                if (lives <= 0) {
+                    gameOver();
+                }
+            }, 500);
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreVal').innerText = score;
+            
+            const livesContainer = document.getElementById('livesContainer');
+            livesContainer.innerHTML = '';
+            for(let i=0; i<lives; i++) {
+                livesContainer.innerHTML += '<span class="heart">❤️</span>';
+            }
+            if(lives === 0) livesContainer.innerHTML = '💔';
+        }
+
+        function gameWin() {
+            document.getElementById('gameModal').style.display = 'flex';
+            document.getElementById('modalEmoji').innerText = '🏆';
+            document.getElementById('modalTitle').innerText = 'Luar Biasa!';
+            document.getElementById('modalDesc').innerText = `Skor Akhir: ${score}`;
+            startConfetti();
+        }
+
+        function gameOver() {
+            document.getElementById('gameModal').style.display = 'flex';
+            document.getElementById('modalEmoji').innerText = '😢';
+            document.getElementById('modalTitle').innerText = 'Yah, Habis!';
+            document.getElementById('modalDesc').innerText = 'Coba lagi yuk, jangan menyerah!';
+        }
+
+        // --- SIMULASI CONFETTI SEDERHANA (Tanpa Library Berat) ---
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationId;
+
+        function startConfetti() {
+            canvas.style.display = 'block';
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    vx: Math.random() * 4 - 2,
+                    vy: Math.random() * 4 + 2,
+                    color: `hsl(${Math.random()*360}, 100%, 50%)`
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if(p.y > canvas.height) p.y = -10;
+                
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 8, 8);
+            });
+            animationId = requestAnimationFrame(animateConfetti);
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(animationId);
+            canvas.style.display = 'none';
+        }
+
+        // Mulai game pertama kali
+        initGame();
+
+    </script>
+</body>
+</html>
