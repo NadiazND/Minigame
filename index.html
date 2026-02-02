@@ -3,76 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Game Pasang Niat Sholat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <title>Game Pasang Niat Sholat - Edisi Ceria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
-            --bg-body: #EEF2FF;
-            --primary: #6366F1;
-            --success: #10B981;
-            --wrong: #F43F5E;
-            --shadow-card: 0 6px 0 rgba(0,0,0,0.1);
-            --shadow-active: 0 2px 0 rgba(0,0,0,0.1);
+            --bg-color: #E0F7FA;
+            --card-bg: #FFFFFF;
+            --primary: #4DD0E1;
+            --primary-dark: #0097A7;
+            --success: #AED581;
+            --success-dark: #7CB342;
+            --wrong: #FFAB91;
+            --wrong-dark: #D84315;
+            --text-main: #37474F;
+            --text-sub: #78909C;
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
             font-family: 'Fredoka', sans-serif;
-            background-color: var(--bg-body);
-            /* Pattern Background */
-            background-image: radial-gradient(#C7D2FE 2px, transparent 2px);
-            background-size: 24px 24px;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#B2EBF2 3px, transparent 3px);
+            background-size: 20px 20px;
             margin: 0;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: hidden; /* Mencegah scroll body, kita scroll konten game saja */
         }
 
-        .game-container {
+        /* Container Utama */
+        .game-wrapper {
             width: 100%;
-            max-width: 480px;
+            max-width: 600px; /* Sedikit lebih lebar untuk desktop */
             height: 100%;
-            background: rgba(255, 255, 255, 0.95);
+            max-height: 900px;
             display: flex;
             flex-direction: column;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            border-radius: 0;
             position: relative;
         }
 
-        /* --- HUD (Skor & Nyawa) --- */
-        .hud {
-            padding: 15px 25px;
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        @media (min-width: 600px) {
+            .game-wrapper {
+                height: 95vh;
+                border-radius: 25px;
+                border: 4px solid #B2EBF2;
+            }
+        }
+
+        /* --- HEADER / HUD --- */
+        .header {
+            padding: 15px 20px;
+            background: #FFFFFF;
+            border-bottom: 3px solid #E0F7FA;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 25px 25px 0 0;
             z-index: 10;
         }
 
-        .score-box {
-            background: #FFEDD5; color: #C2410C;
-            padding: 8px 16px; border-radius: 20px;
-            font-weight: 700; font-size: 1.2rem;
-            display: flex; align-items: center; gap: 8px;
+        .badge {
+            background: #FFF3E0;
+            color: #FF6F00;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 3px solid #FFE0B2;
         }
 
-        .lives { font-size: 1.5rem; letter-spacing: 2px; }
+        .lives-container {
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+        }
 
-        /* --- BOARD GAME --- */
-        .board {
+        /* --- AREA MAIN --- */
+        .instruction {
+            text-align: center;
+            padding: 15px 10px 5px;
+            color: var(--text-sub);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .game-board {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             display: grid;
-            grid-template-columns: 1fr 1.3fr; /* Kanan lebih lebar utk teks */
-            gap: 15px;
-            overflow-y: auto;
-            align-content: center;
+            grid-template-columns: 1fr 1.5fr; /* Kiri lebih kecil, Kanan (teks) lebih lebar */
+            gap: 12px;
+            overflow-y: auto; /* Scrollable jika konten panjang */
+            align-content: start;
         }
+
+        /* Custom Scrollbar agar rapi */
+        .game-board::-webkit-scrollbar { width: 6px; }
+        .game-board::-webkit-scrollbar-thumb { background-color: #CFD8DC; border-radius: 10px; }
 
         .column {
             display: flex;
@@ -80,165 +122,203 @@
             gap: 12px;
         }
 
-        /* --- STYLE KARTU --- */
+        /* --- KARTU --- */
         .card {
-            background: white;
-            min-height: 90px;
-            border-radius: 16px;
-            border: 2px solid #E2E8F0;
-            box-shadow: var(--shadow-card);
+            background: var(--card-bg);
+            border: 2px solid #ECEFF1;
+            border-bottom: 5px solid #CFD8DC; /* Efek 3D */
+            border-radius: 15px;
             cursor: pointer;
+            position: relative;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: all 0.1s;
-            position: relative;
+            min-height: 85px; /* Tinggi minimal kartu */
         }
 
-        .card:active { transform: translateY(4px); box-shadow: var(--shadow-active); }
+        .card:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
 
-        /* Kartu Kiri (Judul Sholat) */
-        .card-left { padding: 10px; }
-        .card-left .icon { font-size: 2rem; margin-bottom: 5px; }
-        .card-left .label { font-size: 1rem; color: #334155; font-weight: 700; }
+        /* Style Kartu Kiri (Nama) */
+        .card-left { padding: 8px; }
+        .card-left .icon { font-size: 2rem; line-height: 1; margin-bottom: 4px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+        .card-left .label { font-size: 1rem; color: var(--text-main); font-weight: 700; }
 
-        /* Kartu Kanan (Teks Niat) */
+        /* Style Kartu Kanan (Niat) */
         .card-right {
-            align-items: flex-start; /* Rata kiri */
-            padding: 12px 15px;
+            align-items: flex-start;
+            padding: 12px;
             text-align: left;
         }
-        .card-right .hint-text {
-            font-size: 0.7rem; color: #94A3B8; margin-bottom: 5px; font-weight: 600;
-        }
-        .card-right .niat-latin {
-            font-family: 'Quicksand', sans-serif;
-            font-size: 0.9rem;
+        .card-right .hint { font-size: 0.7rem; color: #B0BEC5; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .card-right .text-niat {
+            font-family: 'Nunito', sans-serif; /* Font lebih mudah dibaca untuk teks panjang */
+            font-size: 0.95rem;
             font-weight: 700;
-            color: #475569;
+            color: #546E7A;
             line-height: 1.3;
         }
 
-        /* States (Selected, Match, Wrong) */
+        /* --- STATES (Selected, Match, Wrong) --- */
         .card.selected {
-            background: #EEF2FF;
-            border-color: var(--primary);
-            transform: translateY(2px);
-            box-shadow: var(--shadow-active);
+            background: #E1F5FE;
+            border-color: #29B6F6;
+            border-bottom-color: #0288D1;
+            transform: translateY(1px);
         }
 
         .card.match {
-            background: #D1FAE5 !important;
-            border-color: var(--success) !important;
-            color: #065F46;
-            opacity: 0; /* Hilang pelan-pelan */
+            background: #F1F8E9 !important;
+            border-color: #8BC34A !important;
+            border-bottom-color: #689F38 !important;
+            color: #33691E;
+            opacity: 0;
             pointer-events: none;
-            transition: opacity 0.5s ease 0.5s;
-            animation: pop 0.4s;
+            transform: scale(0.9);
+            transition: transform 0.3s, opacity 0.5s ease 0.3s;
         }
 
         .card.wrong {
-            background: #FFE4E6 !important;
-            border-color: var(--wrong) !important;
+            background: #FBE9E7 !important;
+            border-color: #FF7043 !important;
+            border-bottom-color: #D84315 !important;
             animation: shake 0.4s;
         }
 
-        /* --- MODAL --- */
+        /* --- MOBILE TWEAKS --- */
+        @media (max-width: 400px) {
+            .game-board { gap: 8px; padding: 10px; }
+            .card { min-height: 70px; border-radius: 12px; border-bottom-width: 4px; }
+            .card-left .icon { font-size: 1.6rem; }
+            .card-left .label { font-size: 0.85rem; }
+            .card-right .text-niat { font-size: 0.8rem; }
+            .badge { font-size: 0.9rem; padding: 5px 10px; }
+        }
+
+        /* --- MODAL (Pop Up Menang/Kalah) --- */
         .modal-overlay {
             position: absolute; inset: 0;
             background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(4px);
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 50;
+            z-index: 100;
+            animation: fadeIn 0.3s;
+            border-radius: inherit;
         }
-        .modal-content {
+        .modal-card {
+            background: white;
+            padding: 30px;
+            border-radius: 25px;
             text-align: center;
-            animation: dropIn 0.4s;
-            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 4px solid #B2EBF2;
+            width: 80%;
+            max-width: 350px;
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-restart {
-            background: var(--primary); color: white; border: none;
-            padding: 12px 30px; border-radius: 50px;
-            font-family: 'Fredoka', sans-serif; font-size: 1.1rem;
-            cursor: pointer; margin-top: 20px;
-            box-shadow: 0 4px 0 #4338CA;
+        .modal-emoji { font-size: 4rem; margin-bottom: 10px; display: block; }
+        .modal-title { margin: 0; color: var(--text-main); font-size: 1.5rem; }
+        .modal-text { color: var(--text-sub); margin: 10px 0 25px; font-size: 1rem; }
+        
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-bottom: 4px solid var(--primary-dark);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s;
+            width: 100%;
         }
-        .btn-restart:active { transform: translateY(4px); box-shadow: none; }
+        .btn-action:active { transform: translateY(4px); border-bottom-width: 0; margin-top: 4px; }
 
-        /* Animations */
-        @keyframes pop { 50% { transform: scale(1.05); } }
-        @keyframes shake { 0%,100% {transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-        @keyframes dropIn { from {transform:translateY(-20px); opacity:0} to {transform:translateY(0); opacity:1} }
+        /* --- ANIMATIONS --- */
+        @keyframes shake { 0%,100% {transform:translateX(0)} 25%{transform:translateX(-5px) rotate(-5deg)} 75%{transform:translateX(5px) rotate(5deg)} }
+        @keyframes fadeIn { from {opacity:0} to {opacity:1} }
+        @keyframes bounceIn { 
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
 
-    <div class="game-container">
-        <div class="hud">
-            <div class="score-box">⭐ <span id="score">0</span></div>
-            <div class="lives" id="lives">❤️❤️❤️</div>
+    <div class="game-wrapper">
+        <div class="header">
+            <div class="badge">
+                <span>⭐</span> <span id="score">0</span>
+            </div>
+            <div class="lives-container" id="lives">
+                ❤️❤️❤️
+            </div>
         </div>
 
-        <div style="text-align:center; padding:15px 10px 5px 10px; color:#64748B; font-size:0.95rem; font-weight:600;">
-            Pasangkan Nama Sholat dengan Bacaan Niatnya! 👇
+        <div class="instruction">
+            Pasangkan <b>Nama Sholat</b> dengan <b>Niatnya</b>! 👇
         </div>
 
-        <div class="board">
+        <div class="game-board">
             <div class="column" id="col-left"></div>
             <div class="column" id="col-right"></div>
         </div>
 
         <div class="modal-overlay" id="modal">
-            <div class="modal-content">
-                <div style="font-size:4rem; margin-bottom:10px;">🎉</div>
-                <h2 style="color:#1E293B; margin-bottom:5px;">Alhamdulillah!</h2>
-                <p style="color:#64748B;" id="modal-msg">Kamu berhasil menyelesaikan permainan.</p>
-                <button class="btn-restart" onclick="initGame()">Main Lagi 🚀</button>
+            <div class="modal-card">
+                <span class="modal-emoji" id="modal-emoji">🏆</span>
+                <h2 class="modal-title" id="modal-title">Hebat!</h2>
+                <p class="modal-text" id="modal-msg">Kamu berhasil!</p>
+                <button class="btn-action" onclick="initGame()">Main Lagi 🚀</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA GAME (SOLUSI BUG: Teks Niat Spesifik) ---
-        // 'text' adalah bacaan latin yang akan muncul di kartu kanan.
         const gameData = [
             { 
-                id: 'fajr', 
+                id: 'subuh', 
                 name: 'Subuh', 
                 icon: '🌅', 
                 text: 'Ushalli fardhash-Shubhi rak\'ataini...',
-                color: '#10B981' 
+                color: '#4DD0E1'
             },
             { 
-                id: 'dhuhr', 
+                id: 'zuhur', 
                 name: 'Zuhur', 
                 icon: '☀️', 
                 text: 'Ushalli fardhaz-Zhuhri arba\'a...',
-                color: '#F59E0B' 
+                color: '#FFB74D' 
             },
             { 
-                id: 'asr', 
+                id: 'ashar', 
                 name: 'Ashar', 
                 icon: '⛅', 
                 text: 'Ushalli fardhal-\'Ashri arba\'a...',
-                color: '#F97316' 
+                color: '#FF8A65' 
             },
             { 
                 id: 'maghrib', 
                 name: 'Maghrib', 
                 icon: '🌇', 
                 text: 'Ushalli fardhal-Maghribi tsalaatsa...',
-                color: '#3B82F6' 
+                color: '#64B5F6' 
             },
             { 
-                id: 'isha', 
+                id: 'isya', 
                 name: 'Isya', 
                 icon: '🌙', 
                 text: 'Ushalli fardhal-\'Isyaa-i arba\'a...',
-                color: '#8B5CF6' 
+                color: '#9575CD' 
             }
         ];
 
@@ -247,6 +327,7 @@
         let matches = 0;
         let selectedL = null;
         let selectedR = null;
+        let isProcessing = false; // Mencegah klik spam
 
         const colL = document.getElementById('col-left');
         const colR = document.getElementById('col-right');
@@ -260,6 +341,7 @@
             matches = 0;
             selectedL = null;
             selectedR = null;
+            isProcessing = false;
             
             updateHUD();
             modal.style.display = 'none';
@@ -267,146 +349,149 @@
         }
 
         function updateHUD() {
+            // Animasi angka naik (opsional, sederhana saja di sini)
             scoreEl.innerText = score;
-            livesEl.innerText = '❤️'.repeat(lives);
-            if(lives === 0) livesEl.innerText = '💔';
+            
+            // Render nyawa
+            let heartHTML = '';
+            for(let i=0; i<3; i++) {
+                heartHTML += i < lives ? '❤️' : '<span style="opacity:0.3; filter:grayscale(1)">❤️</span>';
+            }
+            livesEl.innerHTML = heartHTML;
         }
 
         function renderBoard() {
             colL.innerHTML = '';
             colR.innerHTML = '';
 
-            // Clone data untuk diacak posisinya
+            // Acak kartu
             let leftData = [...gameData].sort(() => Math.random() - 0.5);
             let rightData = [...gameData].sort(() => Math.random() - 0.5);
 
-            // Render Kolom Kiri (Nama Sholat)
+            // Render Kiri
             leftData.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card card-left';
-                card.dataset.id = item.id;
-                // Ikon diberi warna sesuai tema
-                card.innerHTML = `
-                    <div class="icon" style="color:${item.color}">${item.icon}</div>
+                const el = document.createElement('div');
+                el.className = 'card card-left';
+                el.dataset.id = item.id;
+                // Sedikit style inline untuk hint warna border
+                el.style.borderLeft = `5px solid ${item.color}`;
+                el.innerHTML = `
+                    <div class="icon">${item.icon}</div>
                     <div class="label">${item.name}</div>
                 `;
-                card.onclick = () => selectCard(card, 'left');
-                colL.appendChild(card);
+                el.onclick = () => handleSelect(el, 'left');
+                colL.appendChild(el);
             });
 
-            // Render Kolom Kanan (Teks Niat Latin)
+            // Render Kanan
             rightData.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card card-right';
-                card.dataset.id = item.id;
-                // Border kiri warna sebagai hint halus
-                card.style.borderLeft = `6px solid ${item.color}`;
-                card.innerHTML = `
-                    <div class="hint-text">Cari bacaan ini:</div>
-                    <div class="niat-latin">"${item.text}"</div>
+                const el = document.createElement('div');
+                el.className = 'card card-right';
+                el.dataset.id = item.id;
+                el.innerHTML = `
+                    <div class="hint">Niat Latin:</div>
+                    <div class="text-niat">"${item.text}"</div>
                 `;
-                card.onclick = () => selectCard(card, 'right');
-                colR.appendChild(card);
+                el.onclick = () => handleSelect(el, 'right');
+                colR.appendChild(el);
             });
         }
 
-        function selectCard(card, side) {
-            // Cek kondisi: game over atau kartu sudah matched?
-            if (lives <= 0 || card.classList.contains('match')) return;
+        function handleSelect(card, side) {
+            // Validasi: Game over, sedang proses animasi, atau kartu sudah match
+            if (lives <= 0 || isProcessing || card.classList.contains('match')) return;
+            // Validasi: Klik kartu yang sama dua kali
+            if ((side === 'left' && card === selectedL) || (side === 'right' && card === selectedR)) return;
 
-            // Logika seleksi
+            // Efek suara "tap" sederhana (opsional, visual only disini)
+            
             if (side === 'left') {
                 if (selectedL) selectedL.classList.remove('selected');
                 selectedL = card;
-                card.classList.add('selected');
             } else {
                 if (selectedR) selectedR.classList.remove('selected');
                 selectedR = card;
-                card.classList.add('selected');
             }
+            card.classList.add('selected');
 
-            // Jika sepasang terpilih, cek kecocokan
+            // Cek Match jika keduanya terpilih
             if (selectedL && selectedR) {
                 checkMatch();
             }
         }
 
         function checkMatch() {
+            isProcessing = true; // Kunci input sebentar
             const id1 = selectedL.dataset.id;
             const id2 = selectedR.dataset.id;
 
             if (id1 === id2) {
                 // BENAR
-                handleCorrect();
+                score += 20;
+                matches++;
+                
+                selectedL.classList.remove('selected');
+                selectedR.classList.remove('selected');
+                selectedL.classList.add('match');
+                selectedR.classList.add('match');
+
+                // Confetti mini
+                confetti({
+                    particleCount: 30,
+                    spread: 50,
+                    origin: { y: 0.7 },
+                    colors: ['#AED581', '#4DD0E1']
+                });
+
+                resetSelection();
+                updateHUD();
+
+                if (matches === gameData.length) {
+                    setTimeout(() => showModal(true), 800);
+                }
             } else {
                 // SALAH
-                handleWrong();
+                lives--;
+                selectedL.classList.add('wrong');
+                selectedR.classList.add('wrong');
+                updateHUD();
+
+                setTimeout(() => {
+                    selectedL.classList.remove('wrong', 'selected');
+                    selectedR.classList.remove('wrong', 'selected');
+                    resetSelection();
+                    
+                    if (lives <= 0) showModal(false);
+                }, 600);
             }
         }
 
-        function handleCorrect() {
-            // Tambah kelas match untuk animasi & warna hijau
-            selectedL.classList.add('match');
-            selectedR.classList.add('match');
-            
-            score += 20;
-            matches++;
-            updateHUD();
-
-            // Confetti kecil
-            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
-
-            // Reset seleksi
+        function resetSelection() {
             selectedL = null;
             selectedR = null;
-
-            // Cek Menang
-            if (matches === gameData.length) {
-                setTimeout(() => showModal(true), 800);
-            }
-        }
-
-        function handleWrong() {
-            // Tambah kelas wrong untuk animasi shake & warna merah
-            selectedL.classList.add('wrong');
-            selectedR.classList.add('wrong');
-
-            lives--;
-            updateHUD();
-
-            // Tunggu animasi selesai baru reset
-            setTimeout(() => {
-                if (selectedL) selectedL.classList.remove('wrong', 'selected');
-                if (selectedR) selectedR.classList.remove('wrong', 'selected');
-                selectedL = null;
-                selectedR = null;
-
-                // Cek Kalah
-                if (lives <= 0) {
-                    showModal(false);
-                }
-            }, 500);
+            isProcessing = false;
         }
 
         function showModal(win) {
             modal.style.display = 'flex';
-            const title = document.querySelector('.modal-content h2');
+            const title = document.getElementById('modal-title');
             const msg = document.getElementById('modal-msg');
-            const emoji = document.querySelector('.modal-content div');
+            const emoji = document.getElementById('modal-emoji');
 
             if (win) {
-                emoji.innerText = '🏆';
-                title.innerText = 'Luar Biasa!';
-                msg.innerText = `Skor Akhir: ${score}`;
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                emoji.innerText = '🎉';
+                title.innerText = 'Alhamdulillah!';
+                msg.innerText = `Kamu hebat! Skor akhir: ${score}`;
+                // Confetti Besar
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             } else {
-                emoji.innerText = '😢';
-                title.innerText = 'Jangan Menyerah!';
-                msg.innerText = 'Coba lagi yuk, pasti bisa!';
+                emoji.innerText = '💪';
+                title.innerText = 'Jangan Menyerah';
+                msg.innerText = 'Yuk coba lagi sampai hafal!';
             }
         }
 
-        // Mulai game
+        // Start Game
         initGame();
 
     </script>
